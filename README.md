@@ -49,4 +49,8 @@ npm install
 ```
 
 ### KROK 5: Uruchomienie programu
+Po zainstalowaniu wpisz komendę i zatwierdź Enterem:
+```bash
+npm run dev
+```
 W terminalu pojawi się link (najczęściej http://localhost:5173). Skopiuj ten link i wklej w przeglądarkę.
