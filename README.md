@@ -1,4 +1,4 @@
-# Flashcards – Projekt Studencki
+# Flashcards - Aplikacja internetowa do tworzenia i nauki z fiszek
 
 Prosta aplikacja internetowa do tworzenia i nauki z fiszek. Projekt skupia się na przejrzystym interfejsie i logicznym wspieraniu procesu zapamiętywania.
 
