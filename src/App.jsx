@@ -322,12 +322,12 @@ export default function App() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 border-t border-gray-100 pt-12">
                                 <div className="group">
                                     <h4 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4 group-hover:text-black transition">Dział Techniczny</h4>
-                                    <p className="text-xl font-bold mb-1">dev-support@flashcards.io</p>
+                                    <a href="mailto:dev-support@flashcards.io" className="text-xl font-bold mb-1 hover:underline">dev-support@flashcards.io</a>
                                     <p className="text-sm text-gray-400 tracking-tight">Obsługa zgłoszeń technicznych i błędów UI/UX.</p>
                                 </div>
                                 <div className="group">
                                     <h4 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4 group-hover:text-black transition">Partnerstwa</h4>
-                                    <p className="text-xl font-bold mb-1">partners@flashcards.io</p>
+                                    <a href="mailto:partners@flashcards.io" className="text-xl font-bold mb-1 hover:underline">partners@flashcards.io</a>
                                     <p className="text-sm text-gray-400 tracking-tight">Propozycje integracji i dystrybucji treści.</p>
                                 </div>
                             </div>
