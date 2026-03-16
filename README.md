@@ -6,6 +6,9 @@ Prosta aplikacja internetowa do tworzenia i nauki z fiszek. Projekt skupia się 
 * **Grzegorz Mrzyk**
 * **Marcin Puzoń**
 * **Wojciech Godziek**
+  
+## 🌐 Link do aplikacji
+* https://flashcards-tawny-chi.vercel.app
 
 ## 📝 Wymagania Funkcjonalne
 * **Tworzenie i usuwanie talii** – Użytkownik może organizować fiszki w oddzielne zestawy tematyczne.
