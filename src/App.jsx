@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 export default function App() {
     const [view, setView] = useState('home');
+    const [mode, setMode] = useState(null);
     const [decks] = useState([
         { id: 1, name: 'Język Angielski', cards: [{front: 'Apple', back: 'Jabłko'}, {front: 'Dog', back: 'Pies'}] },
         { id: 2, name: 'Programowanie', cards: [{front: 'Variable', back: 'Zmienna'}] }
@@ -14,6 +15,9 @@ export default function App() {
     const [isFinished, setIsFinished] = useState(false);
     const [animating, setAnimating] = useState(false);
     const [displayCard, setDisplayCard] = useState(null);
+
+    const [userInput, setUserInput] = useState('');
+    const [testResult, setTestResult] = useState(null);
 
     const deck = decks.find(d => d.id === currentDeckId);
 
@@ -37,6 +41,42 @@ export default function App() {
             if (cardIdx + 1 < deck.cards.length) {
                 setFlipped(false);
                 setCardIdx(cardIdx + 1);
+                setUserInput('');
+                setTestResult(null);
+                setTimeout(() => {
+                    setAnimating(false);
+                }, 50);
+            } else {
+                setIsFinished(true);
+                setAnimating(false);
+            }
+        }, 600);
+    };
+
+    const handleTestSubmit = (e) => {
+        if (e) e.preventDefault();
+        if (testResult || animating) return;
+
+        const isCorrect = userInput.trim().toLowerCase() === displayCard.back.toLowerCase();
+
+        if (isCorrect) {
+            setTestResult('correct');
+            setStats(prev => ({ ...prev, correct: prev.correct + 1 }));
+        } else {
+            setTestResult('wrong');
+            setFlipped(true);
+            setStats(prev => ({ ...prev, wrong: prev.wrong + 1 }));
+        }
+    };
+
+    const handleNextWithAnimation = () => {
+        setAnimating(true);
+        setTimeout(() => {
+            if (cardIdx + 1 < deck.cards.length) {
+                setFlipped(false);
+                setCardIdx(cardIdx + 1);
+                setUserInput('');
+                setTestResult(null);
                 setTimeout(() => {
                     setAnimating(false);
                 }, 50);
@@ -53,6 +93,8 @@ export default function App() {
         setStats({ correct: 0, wrong: 0 });
         setIsFinished(false);
         setAnimating(false);
+        setUserInput('');
+        setTestResult(null);
         if (deck) setDisplayCard(deck.cards[0]);
     };
 
@@ -163,9 +205,9 @@ export default function App() {
                     </div>
                     <button
                         onClick={() => alert('Funkcja dodawania w przygotowaniu')}
-                        className="bg-black text-white w-12 h-12 rounded-full flex items-center justify-center text-3xl font-light hover:scale-110 active:scale-90 transition shadow-lg shadow-black/20"
+                        className="bg-black text-white w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 active:scale-90 transition shadow-lg shadow-black/20"
                     >
-                        +
+                        <span className="text-3xl font-light leading-none relative -top-[1px]">+</span>
                     </button>
                 </div>
             </header>
@@ -178,13 +220,36 @@ export default function App() {
                             {decks.map(d => (
                                 <div
                                     key={d.id}
-                                    onClick={() => { setCurrentDeckId(d.id); setView('deck'); resetSession(); }}
+                                    onClick={() => { setCurrentDeckId(d.id); setView('mode-select'); }}
                                     className="group border border-gray-100 p-10 rounded-[2.5rem] hover:border-black hover:-translate-y-1 cursor-pointer transition-all bg-white shadow-sm hover:shadow-xl text-left"
                                 >
                                     <h3 className="text-2xl font-bold mb-2 group-hover:tracking-tight transition-all">{d.name}</h3>
                                     <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">{d.cards.length} kart w talii</p>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                )}
+
+                {view === 'mode-select' && (
+                    <div className="max-w-2xl mx-auto view-enter-content text-center">
+                        <button onClick={() => setView('home')} className="text-[10px] font-black text-gray-400 hover:text-black transition uppercase tracking-[0.2em] mb-8 block mx-auto">← Wróć do kolekcji</button>
+                        <h2 className="text-4xl font-black mb-12 uppercase tracking-tighter">Wybierz tryb nauki</h2>
+                        <div className="grid grid-cols-1 gap-6">
+                            <div
+                                onClick={() => { setMode('classic'); setView('deck'); resetSession(); }}
+                                className="border border-gray-100 p-10 rounded-[2.5rem] hover:border-black cursor-pointer transition-all bg-white shadow-sm hover:shadow-xl group"
+                            >
+                                <h3 className="text-2xl font-bold mb-2 uppercase group-hover:tracking-tight transition-all">Tryb Klasyczny</h3>
+                                <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Standardowe przeglądanie wiem/nie wiem</p>
+                            </div>
+                            <div
+                                onClick={() => { setMode('test'); setView('deck'); resetSession(); }}
+                                className="border border-gray-100 p-10 rounded-[2.5rem] hover:border-black cursor-pointer transition-all bg-white shadow-sm hover:shadow-xl group"
+                            >
+                                <h3 className="text-2xl font-bold mb-2 uppercase group-hover:tracking-tight transition-all">Tryb Testowy</h3>
+                                <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Wpisywanie odpowiedzi z klawiatury</p>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -209,7 +274,7 @@ export default function App() {
 
                         <div className="space-y-10">
                             <div className="flex justify-between items-end border-b border-gray-100 pb-4">
-                                <h3 className="text-[10px] font-black uppercase tracking-[0.3em]">Nauka</h3>
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.3em]">{mode === 'classic' ? 'Nauka' : 'Test'}</h3>
                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{cardIdx + 1} / {deck.cards.length}</span>
                             </div>
 
@@ -217,7 +282,19 @@ export default function App() {
                                 <div className={`card-wrapper ${animating ? 'leaving' : ''}`}>
                                     <div
                                         className={`card-inner ${flipped ? 'is-flipped' : ''} ${animating ? 'no-transition' : ''}`}
-                                        onClick={() => !animating && setFlipped(!flipped)}
+                                        onClick={() => {
+                                            if (!animating) {
+                                                if (mode === 'classic') {
+                                                    setFlipped(!flipped);
+                                                } else if (mode === 'test') {
+                                                    setFlipped(!flipped);
+                                                    if (!testResult) {
+                                                        setTestResult('wrong');
+                                                        setStats(prev => ({ ...prev, wrong: prev.wrong + 1 }));
+                                                    }
+                                                }
+                                            }
+                                        }}
                                     >
                                         <div className="card-face card-front">
                                             {displayCard?.front}
@@ -229,22 +306,59 @@ export default function App() {
                                 </div>
                             </div>
 
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                                <button
-                                    onClick={() => handleAnswer(false)}
-                                    disabled={animating}
-                                    className="w-full bg-white border-2 border-red-50 text-red-500 py-6 rounded-[1.5rem] font-bold text-sm uppercase tracking-[0.2em] hover:bg-red-50 active:scale-95 transition-all shadow-lg shadow-red-100/10 disabled:opacity-50"
-                                >
-                                    Nie wiedziałem
-                                </button>
-                                <button
-                                    onClick={() => handleAnswer(true)}
-                                    disabled={animating}
-                                    className="w-full bg-black text-white py-6 rounded-[1.5rem] font-bold text-sm uppercase tracking-[0.2em] shadow-2xl shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
-                                >
-                                    Wiedziałem
-                                </button>
-                            </div>
+                            {mode === 'classic' ? (
+                                <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+                                    <button
+                                        onClick={() => handleAnswer(false)}
+                                        disabled={animating}
+                                        className="w-full bg-white border-2 border-red-50 text-red-500 py-6 rounded-[1.5rem] font-bold text-sm uppercase tracking-[0.2em] hover:bg-red-50 active:scale-95 transition-all shadow-lg shadow-red-100/10 disabled:opacity-50"
+                                    >
+                                        Nie wiedziałem
+                                    </button>
+                                    <button
+                                        onClick={() => handleAnswer(true)}
+                                        disabled={animating}
+                                        className="w-full bg-black text-white py-6 rounded-[1.5rem] font-bold text-sm uppercase tracking-[0.2em] shadow-2xl shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+                                    >
+                                        Wiedziałem
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="pt-4 space-y-4">
+                                    {!testResult ? (
+                                        <form onSubmit={handleTestSubmit} className="relative">
+                                            <input
+                                                autoFocus
+                                                type="text"
+                                                value={userInput}
+                                                onChange={(e) => setUserInput(e.target.value)}
+                                                placeholder="Wpisz odpowiedź..."
+                                                className="w-full border-2 border-gray-100 rounded-[1.5rem] py-6 px-8 text-lg font-bold outline-none focus:border-black transition-all"
+                                            />
+                                            <button
+                                                type="submit"
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 bg-black text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition"
+                                            >
+                                                Sprawdź
+                                            </button>
+                                        </form>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            <div className="flex flex-col gap-4">
+                                                <button
+                                                    onClick={handleNextWithAnimation}
+                                                    className="w-full bg-black text-white py-6 rounded-[1.5rem] font-bold text-sm uppercase tracking-[0.2em] shadow-2xl shadow-black/20 hover:scale-[1.02] active:scale-95 transition-all"
+                                                >
+                                                    Następna fiszka
+                                                </button>
+                                                <div className={`text-center py-2 font-black text-[10px] uppercase tracking-[0.3em] ${testResult === 'correct' ? 'text-green-500' : 'text-red-500'}`}>
+                                                    {testResult === 'correct' ? 'Świetnie! Dobra odpowiedź' : `Błąd. Poprawna odpowiedź: ${displayCard.back}`}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
