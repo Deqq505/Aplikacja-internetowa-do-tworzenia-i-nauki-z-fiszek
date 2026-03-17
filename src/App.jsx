@@ -455,7 +455,7 @@ export default function App() {
                             </div>
 
                             <div className="bg-gray-900 text-white p-8 md:p-14 rounded-[2rem] shadow-2xl fade-in-up delay-200 flex flex-col lg:flex-row gap-10 lg:items-stretch overflow-hidden">
-                                <div className="flex-1 flex flex-col justify-center">
+                                <div className="flex-1 flex flex-col justify-center relative z-20">
                                     <h4 className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-8">Centrum Operacyjne</h4>
                                     <p className="text-lg md:text-xl leading-loose uppercase tracking-widest font-light text-gray-200">
                                         <strong className="font-bold text-white block mb-2">Flashcards Digital Systems</strong>
@@ -464,10 +464,10 @@ export default function App() {
                                         <span className="text-gray-500 mt-5 block text-sm">NIP: 000-000-00-00</span>
                                     </p>
                                 </div>
-                                <div className="w-full lg:w-[45%] min-h-[250px] lg:min-h-full rounded-2xl overflow-hidden shadow-inner border border-gray-800 hover:scale-[1.03] transition-transform duration-500 cursor-pointer">
+                                <div className="w-full lg:w-[45%] min-h-[250px] lg:min-h-full rounded-2xl overflow-hidden shadow-inner border border-gray-800 hover:scale-[1.03] transition-transform duration-500 cursor-pointer transform-gpu relative z-10">
                                     <iframe
                                         title="mapa-dojazdu"
-                                        src="https://maps.google.com/maps?q=Spawner+Marka,+Strzelc%C3%B3w+4A,+Krak%C3%B3w&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                                        src="https://maps.google.com/maps?q=Spawner%20Marka,%20Strzelc%C3%B3w%204A,%20Krak%C3%B3w&t=&z=15&ie=UTF8&iwloc=&output=embed"
                                         width="100%"
                                         height="100%"
                                         style={{ border: 0 }}
