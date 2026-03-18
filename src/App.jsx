@@ -55,7 +55,7 @@ export default function App() {
         }
 
         const newDeck = {
-            id: Date.now(), 
+            id: Date.now(),
             name: newDeckName.trim(),
             cards: validCards
         };
@@ -64,6 +64,13 @@ export default function App() {
         setNewDeckName('');
         setNewCards([{ front: '', back: '' }]);
         setView('home');
+    };
+
+    const deleteDeck = (id, e) => {
+        e.stopPropagation();
+        if (window.confirm('Czy na pewno chcesz usunąć tę kolekcję?')) {
+            setDecks(decks.filter(d => d.id !== id));
+        }
     };
 
     const handleAnswer = (isCorrect) => {
@@ -137,7 +144,6 @@ export default function App() {
         if (deck) setDisplayCard(deck.cards[0]);
     };
 
-    
     return (
         <div className="min-h-screen flex flex-col font-sans bg-[#fafafa] text-gray-900 overflow-x-hidden selection:bg-black selection:text-white">
             <style>{`
@@ -240,10 +246,21 @@ export default function App() {
                                 <div
                                     key={d.id}
                                     onClick={() => { setCurrentDeckId(d.id); setView('mode-select'); }}
-                                    className="fade-in-up group border border-gray-100 p-8 md:p-10 rounded-[2rem] hover:border-gray-300 cursor-pointer transition-all duration-500 bg-white shadow-sm hover:shadow-2xl hover:-translate-y-2 text-left flex flex-col justify-between min-h-[200px]"
+                                    className="relative fade-in-up group border border-gray-100 p-8 md:p-10 rounded-[2rem] hover:border-gray-300 cursor-pointer transition-all duration-500 bg-white shadow-sm hover:shadow-2xl hover:-translate-y-2 text-left flex flex-col justify-between min-h-[200px]"
                                     style={{ animationDelay: `${index * 100}ms` }}
                                 >
-                                    <h3 className="text-2xl md:text-3xl font-bold mb-4 text-gray-900 group-hover:text-black transition-colors">{d.name}</h3>
+
+                                    <button
+                                        onClick={(e) => deleteDeck(d.id, e)}
+                                        className="absolute top-6 right-6 p-2.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300"
+                                        title="Usuń kolekcję"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                        </svg>
+                                    </button>
+
+                                    <h3 className="text-2xl md:text-3xl font-bold mb-4 text-gray-900 group-hover:text-black transition-colors pr-8">{d.name}</h3>
                                     <div className="flex items-center gap-4">
                                         <div className="h-[2px] w-6 bg-gray-200 group-hover:w-10 group-hover:bg-black transition-all duration-500"></div>
                                         <p className="text-gray-400 text-xs font-bold uppercase tracking-widest group-hover:text-gray-600 transition-colors">{d.cards.length} kart w talii</p>
