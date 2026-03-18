@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from 'react';
 
+const PageHeader = ({ title, setView }) => (
+    <div className="mb-14 fade-in-up">
+        <button
+            onClick={() => setView('home')}
+            className="group flex items-center text-sm font-semibold text-gray-400 hover:text-gray-900 mb-6 transition-colors duration-300 uppercase tracking-widest"
+        >
+            <span className="mr-3 transition-transform duration-300 group-hover:-translate-x-2">←</span> Wróć do strony głównej
+        </button>
+        <h2 className="text-4xl md:text-6xl font-black tracking-tight uppercase leading-none text-gray-900">{title}</h2>
+    </div>
+);
+
 export default function App() {
     const [view, setView] = useState('home');
     const [mode, setMode] = useState(null);
@@ -125,18 +137,7 @@ export default function App() {
         if (deck) setDisplayCard(deck.cards[0]);
     };
 
-    const PageHeader = ({ title }) => (
-        <div className="mb-14 fade-in-up">
-            <button
-                onClick={() => setView('home')}
-                className="group flex items-center text-sm font-semibold text-gray-400 hover:text-gray-900 mb-6 transition-colors duration-300 uppercase tracking-widest"
-            >
-                <span className="mr-3 transition-transform duration-300 group-hover:-translate-x-2">←</span> Wróć do strony głównej
-            </button>
-            <h2 className="text-4xl md:text-6xl font-black tracking-tight uppercase leading-none text-gray-900">{title}</h2>
-        </div>
-    );
-
+    
     return (
         <div className="min-h-screen flex flex-col font-sans bg-[#fafafa] text-gray-900 overflow-x-hidden selection:bg-black selection:text-white">
             <style>{`
@@ -255,7 +256,7 @@ export default function App() {
 
                 {view === 'addDeck' && (
                     <div className="max-w-4xl mx-auto fade-in-up">
-                        <PageHeader title="Nowa Kolekcja" />
+                        <PageHeader title="Nowa Kolekcja" setView={setView} />
                         
                         <div className="space-y-12 bg-white p-10 md:p-16 rounded-[2rem] border border-gray-100 shadow-sm">
                             <div className="fade-in-up delay-100">
@@ -496,7 +497,7 @@ export default function App() {
 
                 {view === 'help' && (
                     <div className="max-w-4xl mx-auto fade-in-up">
-                        <PageHeader title="Centrum Pomocy" />
+                        <PageHeader title="Centrum Pomocy" setView={setView} />
                         <div className="space-y-14 md:space-y-20 bg-white p-10 md:p-16 rounded-[2rem] border border-gray-100 shadow-sm">
                             <section className="fade-in-up delay-100">
                                 <h4 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-10">Podstawy obsługi</h4>
@@ -543,7 +544,7 @@ export default function App() {
 
                 {view === 'contact' && (
                     <div className="max-w-4xl mx-auto fade-in-up">
-                        <PageHeader title="Komunikacja" />
+                        <PageHeader title="Komunikacja" setView={setView} />
                         <div className="space-y-16">
                             <p className="text-2xl md:text-3xl font-light leading-relaxed text-gray-600 fade-in-up delay-100">
                                 Wspieramy dynamiczny rozwój społeczności uczącej się. Jeśli masz pytania dotyczące implementacji technicznej lub chcesz zgłosić błąd, nasze kanały komunikacji pozostają otwarte.
@@ -596,7 +597,7 @@ export default function App() {
 
                 {view === 'privacy' && (
                     <div className="max-w-4xl mx-auto fade-in-up">
-                        <PageHeader title="Polityka Prywatności" />
+                        <PageHeader title="Polityka Prywatności" setView={setView} />
                         <div className="space-y-12 bg-white p-10 md:p-16 rounded-[2rem] border border-gray-100 shadow-sm">
                             <section className="fade-in-up delay-100">
                                 <h4 className="text-sm font-bold uppercase tracking-widest text-gray-400 mb-6">Suwerenność Danych</h4>
