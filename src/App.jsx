@@ -32,6 +32,7 @@ export default function App() {
     const [isFinished, setIsFinished] = useState(false);
     const [animating, setAnimating] = useState(false);
     const [displayCard, setDisplayCard] = useState(null);
+    const [sessionCards, setSessionCards] = useState([]);
 
     const [userInput, setUserInput] = useState('');
     const [testResult, setTestResult] = useState(null);
@@ -58,10 +59,10 @@ export default function App() {
     }, [theme]);
 
     useEffect(() => {
-        if (deck && !animating) {
-            setDisplayCard(deck.cards[cardIdx]);
+        if (sessionCards.length > 0 && !animating) {
+            setDisplayCard(sessionCards[cardIdx]);
         }
-    }, [cardIdx, deck, animating]);
+    }, [cardIdx, sessionCards, animating]);
 
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
@@ -170,7 +171,7 @@ export default function App() {
         setAnimating(true);
 
         setTimeout(() => {
-            if (cardIdx + 1 < deck.cards.length) {
+            if (cardIdx + 1 < sessionCards.length) {
                 setFlipped(false);
                 setCardIdx(cardIdx + 1);
                 setUserInput('');
@@ -204,7 +205,7 @@ export default function App() {
     const handleNextWithAnimation = () => {
         setAnimating(true);
         setTimeout(() => {
-            if (cardIdx + 1 < deck.cards.length) {
+            if (cardIdx + 1 < sessionCards.length) {
                 setFlipped(false);
                 setCardIdx(cardIdx + 1);
                 setUserInput('');
@@ -227,7 +228,11 @@ export default function App() {
         setAnimating(false);
         setUserInput('');
         setTestResult(null);
-        if (deck) setDisplayCard(deck.cards[0]);
+        if (deck) {
+            const shuffled = [...deck.cards].sort(() => Math.random() - 0.5);
+            setSessionCards(shuffled);
+            setDisplayCard(shuffled[0]);
+        }
     };
 
     const triggerFlashbang = () => {
@@ -582,7 +587,7 @@ export default function App() {
                         <div className="space-y-12">
                             <div className={`flex justify-between items-end border-b pb-6 ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
                                 <h3 className={`text-sm font-bold uppercase tracking-widest ${isDark ? 'text-gray-300' : 'text-gray-800'}`}>{mode === 'classic' ? 'Nauka' : 'Test'}</h3>
-                                <span className={`text-sm font-bold uppercase tracking-widest ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{cardIdx + 1} / {deck.cards.length}</span>
+                                <span className={`text-sm font-bold uppercase tracking-widest ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{cardIdx + 1} / {sessionCards.length}</span>
                             </div>
 
                             <div className="scene">
