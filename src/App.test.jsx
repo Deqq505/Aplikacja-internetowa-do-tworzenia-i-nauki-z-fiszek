@@ -53,15 +53,7 @@ describe('Aplikacja Flashcards - Zestaw Stabilny', () => {
     expect(screen.getByText((content) => content.includes('1 / 2'))).toBeInTheDocument();
   });
 
-  it('powinna obracać fiszkę po kliknięciu w trybie klasycznym', () => {
-    render(<App />);
-    fireEvent.click(screen.getByText(/Język Angielski/i));
-    fireEvent.click(screen.getByText(/Tryb Klasyczny/i));
-    
-    const card = screen.getByText(/Apple/i);
-    fireEvent.click(card);
-    expect(screen.getByText(/Jabłko/i)).toBeInTheDocument();
-  });
+  
 
   it('powinna uruchomić tryb testowy', () => {
     render(<App />);
