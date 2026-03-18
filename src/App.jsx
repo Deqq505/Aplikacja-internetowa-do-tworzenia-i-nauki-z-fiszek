@@ -20,6 +20,7 @@ export default function App() {
         { id: 2, name: 'Programowanie', cards: [{front: 'Variable', back: 'Zmienna'}] }
     ]);
 
+    const [editingDeckId, setEditingDeckId] = useState(null);
     const [newDeckName, setNewDeckName] = useState('');
     const [newCards, setNewCards] = useState([{ front: '', back: '' }]);
 
@@ -42,7 +43,22 @@ export default function App() {
         }
     }, [cardIdx, deck, animating]);
 
-    const saveNewDeck = () => {
+    const openAddDeck = () => {
+        setEditingDeckId(null);
+        setNewDeckName('');
+        setNewCards([{ front: '', back: '' }]);
+        setView('addDeck');
+    };
+
+    const startEditing = (deckToEdit, e) => {
+        e.stopPropagation();
+        setEditingDeckId(deckToEdit.id);
+        setNewDeckName(deckToEdit.name);
+        setNewCards([...deckToEdit.cards]); 
+        setView('addDeck');
+    };
+
+    const saveDeck = () => {
         if (!newDeckName.trim()) {
             alert('Proszę podać nazwę kolekcji.');
             return;
@@ -54,20 +70,25 @@ export default function App() {
             return;
         }
 
-        const newDeck = {
-            id: Date.now(),
-            name: newDeckName.trim(),
-            cards: validCards
-        };
+        if (editingDeckId) {
+            setDecks(decks.map(d => d.id === editingDeckId ? { ...d, name: newDeckName.trim(), cards: validCards } : d));
+        } else {
+            const newDeck = {
+                id: Date.now(),
+                name: newDeckName.trim(),
+                cards: validCards
+            };
+            setDecks([...decks, newDeck]);
+        }
 
-        setDecks([...decks, newDeck]);
+        setEditingDeckId(null);
         setNewDeckName('');
         setNewCards([{ front: '', back: '' }]);
         setView('home');
     };
 
     const deleteDeck = (id, e) => {
-        e.stopPropagation();
+        e.stopPropagation(); 
         if (window.confirm('Czy na pewno chcesz usunąć tę kolekcję?')) {
             setDecks(decks.filter(d => d.id !== id));
         }
@@ -229,7 +250,7 @@ export default function App() {
                         </nav>
                     </div>
                     <button
-                        onClick={() => setView('addDeck')}
+                        onClick={openAddDeck}
                         className="bg-black text-white w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center hover:scale-105 active:scale-[0.95] transition-transform duration-300 shadow-lg shadow-black/20"
                     >
                         <span className="text-3xl md:text-4xl font-light leading-none relative -top-[2px] md:-top-[3px]">+</span>
@@ -249,18 +270,28 @@ export default function App() {
                                     className="relative fade-in-up group border border-gray-100 p-8 md:p-10 rounded-[2rem] hover:border-gray-300 cursor-pointer transition-all duration-500 bg-white shadow-sm hover:shadow-2xl hover:-translate-y-2 text-left flex flex-col justify-between min-h-[200px]"
                                     style={{ animationDelay: `${index * 100}ms` }}
                                 >
+                                    <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10">
+                                        <button
+                                            onClick={(e) => startEditing(d, e)}
+                                            className="p-2.5 text-gray-300 hover:text-blue-500 hover:bg-blue-50 rounded-full transition-all duration-300"
+                                            title="Edytuj kolekcję"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                                            </svg>
+                                        </button>
+                                        <button
+                                            onClick={(e) => deleteDeck(d.id, e)}
+                                            className="p-2.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-all duration-300"
+                                            title="Usuń kolekcję"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                            </svg>
+                                        </button>
+                                    </div>
 
-                                    <button
-                                        onClick={(e) => deleteDeck(d.id, e)}
-                                        className="absolute top-6 right-6 p-2.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300"
-                                        title="Usuń kolekcję"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                                        </svg>
-                                    </button>
-
-                                    <h3 className="text-2xl md:text-3xl font-bold mb-4 text-gray-900 group-hover:text-black transition-colors pr-8">{d.name}</h3>
+                                    <h3 className="text-2xl md:text-3xl font-bold mb-4 text-gray-900 group-hover:text-black transition-colors pr-16">{d.name}</h3>
                                     <div className="flex items-center gap-4">
                                         <div className="h-[2px] w-6 bg-gray-200 group-hover:w-10 group-hover:bg-black transition-all duration-500"></div>
                                         <p className="text-gray-400 text-xs font-bold uppercase tracking-widest group-hover:text-gray-600 transition-colors">{d.cards.length} kart w talii</p>
@@ -273,11 +304,11 @@ export default function App() {
 
                 {view === 'addDeck' && (
                     <div className="max-w-4xl mx-auto fade-in-up">
-                        <PageHeader title="Nowa Kolekcja" setView={setView} />
+                        <PageHeader title={editingDeckId ? "Edytuj Kolekcję" : "Nowa Kolekcja"} setView={setView} />
                         
                         <div className="space-y-12 bg-white p-10 md:p-16 rounded-[2rem] border border-gray-100 shadow-sm">
                             <div className="fade-in-up delay-100">
-                                <label className="block text-sm font-bold uppercase tracking-widest text-gray-400 mb-6">Nazwa nowej kolekcji</label>
+                                <label className="block text-sm font-bold uppercase tracking-widest text-gray-400 mb-6">Nazwa kolekcji</label>
                                 <input
                                     type="text"
                                     value={newDeckName}
@@ -347,10 +378,10 @@ export default function App() {
 
                             <div className="pt-6 border-t border-gray-100 fade-in-up delay-200">
                                 <button
-                                    onClick={saveNewDeck}
+                                    onClick={saveDeck}
                                     className="w-full bg-black text-white py-6 rounded-[1.5rem] font-bold text-sm uppercase tracking-widest shadow-xl shadow-black/10 hover:shadow-2xl hover:-translate-y-1 active:scale-[0.98] transition-all duration-300"
                                 >
-                                    Utwórz kolekcję
+                                    {editingDeckId ? "Zapisz zmiany" : "Utwórz kolekcję"}
                                 </button>
                             </div>
                         </div>
