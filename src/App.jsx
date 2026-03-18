@@ -3,10 +3,13 @@ import React, { useState, useEffect } from 'react';
 export default function App() {
     const [view, setView] = useState('home');
     const [mode, setMode] = useState(null);
-    const [decks] = useState([
+    const [decks, setDecks] = useState([
         { id: 1, name: 'Język Angielski', cards: [{front: 'Apple', back: 'Jabłko'}, {front: 'Dog', back: 'Pies'}] },
         { id: 2, name: 'Programowanie', cards: [{front: 'Variable', back: 'Zmienna'}] }
     ]);
+
+    const [newDeckName, setNewDeckName] = useState('');
+    const [newCards, setNewCards] = useState([{ front: '', back: '' }]);
 
     const [currentDeckId, setCurrentDeckId] = useState(null);
     const [flipped, setFlipped] = useState(false);
@@ -26,6 +29,30 @@ export default function App() {
             setDisplayCard(deck.cards[cardIdx]);
         }
     }, [cardIdx, deck, animating]);
+
+    const saveNewDeck = () => {
+        if (!newDeckName.trim()) {
+            alert('Proszę podać nazwę kolekcji.');
+            return;
+        }
+
+        const validCards = newCards.filter(card => card.front.trim() && card.back.trim());
+        if (validCards.length === 0) {
+            alert('Kolekcja musi zawierać przynajmniej jedną w pełni uzupełnioną fiszkę.');
+            return;
+        }
+
+        const newDeck = {
+            id: Date.now(), 
+            name: newDeckName.trim(),
+            cards: validCards
+        };
+
+        setDecks([...decks, newDeck]);
+        setNewDeckName('');
+        setNewCards([{ front: '', back: '' }]);
+        setView('home');
+    };
 
     const handleAnswer = (isCorrect) => {
         if (animating || !deck) return;
@@ -195,7 +222,7 @@ export default function App() {
                         </nav>
                     </div>
                     <button
-                        onClick={() => alert('Funkcja dodawania w przygotowaniu')}
+                        onClick={() => setView('addDeck')}
                         className="bg-black text-white w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center hover:scale-105 active:scale-[0.95] transition-transform duration-300 shadow-lg shadow-black/20"
                     >
                         <span className="text-3xl md:text-4xl font-light leading-none relative -top-[2px] md:-top-[3px]">+</span>
@@ -222,6 +249,92 @@ export default function App() {
                                     </div>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                )}
+
+                {view === 'addDeck' && (
+                    <div className="max-w-4xl mx-auto fade-in-up">
+                        <PageHeader title="Nowa Kolekcja" />
+                        
+                        <div className="space-y-12 bg-white p-10 md:p-16 rounded-[2rem] border border-gray-100 shadow-sm">
+                            <div className="fade-in-up delay-100">
+                                <label className="block text-sm font-bold uppercase tracking-widest text-gray-400 mb-6">Nazwa nowej kolekcji</label>
+                                <input
+                                    type="text"
+                                    value={newDeckName}
+                                    onChange={(e) => setNewDeckName(e.target.value)}
+                                    placeholder="np. Słówka z Hiszpańskiego"
+                                    className="w-full border-2 border-transparent bg-gray-50 rounded-[1.5rem] py-5 px-8 text-2xl font-black outline-none focus:border-black focus:bg-white focus:shadow-xl text-gray-900 transition-all duration-300 placeholder-gray-300"
+                                />
+                            </div>
+
+                            <div className="fade-in-up delay-200">
+                                <div className="flex justify-between items-end mb-6">
+                                    <h3 className="text-sm font-bold uppercase tracking-widest text-gray-400">Fiszki ({newCards.length})</h3>
+                                </div>
+                                
+                                <div className="space-y-4">
+                                    {newCards.map((card, idx) => (
+                                        <div key={idx} className="flex flex-col md:flex-row gap-4 items-center bg-gray-50/50 border border-gray-100 p-6 rounded-[1.5rem] hover:border-gray-300 transition-colors duration-300">
+                                            <div className="flex text-gray-300 font-black text-xl w-8 justify-center">
+                                                {idx + 1}
+                                            </div>
+                                            <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                                                <input
+                                                    type="text"
+                                                    value={card.front}
+                                                    onChange={(e) => {
+                                                        const updated = [...newCards];
+                                                        updated[idx].front = e.target.value;
+                                                        setNewCards(updated);
+                                                    }}
+                                                    placeholder="Przód (np. słówko)"
+                                                    className="w-full bg-transparent border-b-2 border-gray-200 pb-2 text-lg font-bold outline-none focus:border-black text-gray-900 transition-colors placeholder-gray-300"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={card.back}
+                                                    onChange={(e) => {
+                                                        const updated = [...newCards];
+                                                        updated[idx].back = e.target.value;
+                                                        setNewCards(updated);
+                                                    }}
+                                                    placeholder="Tył (np. tłumaczenie)"
+                                                    className="w-full bg-transparent border-b-2 border-gray-200 pb-2 text-lg font-bold outline-none focus:border-black text-gray-900 transition-colors placeholder-gray-300"
+                                                />
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    if(newCards.length > 1) {
+                                                        setNewCards(newCards.filter((_, index) => index !== idx));
+                                                    }
+                                                }}
+                                                className={`p-3 rounded-full transition-all duration-300 ${newCards.length > 1 ? 'text-red-400 hover:text-red-600 hover:bg-red-50' : 'text-gray-200 cursor-not-allowed'}`}
+                                                disabled={newCards.length <= 1}
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                                
+                                <button
+                                    onClick={() => setNewCards([...newCards, { front: '', back: '' }])}
+                                    className="w-full mt-6 py-6 border-2 border-dashed border-gray-200 rounded-[1.5rem] text-sm font-bold text-gray-400 uppercase tracking-widest hover:border-gray-900 hover:text-gray-900 transition-all duration-300"
+                                >
+                                    + Dodaj kolejną fiszkę
+                                </button>
+                            </div>
+
+                            <div className="pt-6 border-t border-gray-100 fade-in-up delay-200">
+                                <button
+                                    onClick={saveNewDeck}
+                                    className="w-full bg-black text-white py-6 rounded-[1.5rem] font-bold text-sm uppercase tracking-widest shadow-xl shadow-black/10 hover:shadow-2xl hover:-translate-y-1 active:scale-[0.98] transition-all duration-300"
+                                >
+                                    Utwórz kolekcję
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
