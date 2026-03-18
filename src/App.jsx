@@ -37,6 +37,14 @@ export default function App() {
     const [testResult, setTestResult] = useState(null);
     const [flashbang, setFlashbang] = useState(false);
 
+    const [toast, setToast] = useState(null);
+    const [modal, setModal] = useState(null);
+    const [deckNameError, setDeckNameError] = useState(false);
+    const [cardErrors, setCardErrors] = useState([]);
+
+    const MAX_DECK_NAME = 40;
+    const MAX_CARD_TEXT = 100;
+
     const deck = decks.find(d => d.id === currentDeckId);
     const isDark = theme === 'dark';
 
@@ -55,10 +63,17 @@ export default function App() {
         }
     }, [cardIdx, deck, animating]);
 
+    const showToast = (message, type = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    };
+
     const openAddDeck = () => {
         setEditingDeckId(null);
         setNewDeckName('');
         setNewCards([{ front: '', back: '' }]);
+        setDeckNameError(false);
+        setCardErrors([]);
         setView('addDeck');
     };
 
@@ -67,23 +82,54 @@ export default function App() {
         setEditingDeckId(deckToEdit.id);
         setNewDeckName(deckToEdit.name);
         setNewCards([...deckToEdit.cards]);
+        setDeckNameError(false);
+        setCardErrors([]);
         setView('addDeck');
+    };
+
+    const handleDeckNameChange = (e) => {
+        const val = e.target.value;
+        if (val.length >= MAX_DECK_NAME) {
+            setDeckNameError(true);
+            setTimeout(() => setDeckNameError(false), 500);
+        }
+        setNewDeckName(val.slice(0, MAX_DECK_NAME));
+    };
+
+    const handleCardChange = (idx, field, val) => {
+        if (val.length >= MAX_CARD_TEXT) {
+            const newErrors = [...cardErrors];
+            if (!newErrors[idx]) newErrors[idx] = { front: false, back: false };
+            newErrors[idx][field] = true;
+            setCardErrors(newErrors);
+            setTimeout(() => {
+                const cleared = [...cardErrors];
+                if (cleared[idx]) cleared[idx][field] = false;
+                setCardErrors(cleared);
+            }, 500);
+        }
+        const updated = [...newCards];
+        updated[idx][field] = val.slice(0, MAX_CARD_TEXT);
+        setNewCards(updated);
     };
 
     const saveDeck = () => {
         if (!newDeckName.trim()) {
-            alert('Proszę podać nazwę kolekcji.');
+            setDeckNameError(true);
+            setTimeout(() => setDeckNameError(false), 500);
+            setModal({ title: 'Brakujące dane', message: 'Proszę podać nazwę kolekcji.', type: 'alert' });
             return;
         }
 
         const validCards = newCards.filter(card => card.front.trim() && card.back.trim());
         if (validCards.length === 0) {
-            alert('Kolekcja musi zawierać przynajmniej jedną w pełni uzupełnioną fiszkę.');
+            setModal({ title: 'Brak fiszek', message: 'Kolekcja musi zawierać przynajmniej jedną w pełni uzupełnioną fiszkę (przód i tył).', type: 'alert' });
             return;
         }
 
         if (editingDeckId) {
             setDecks(decks.map(d => d.id === editingDeckId ? { ...d, name: newDeckName.trim(), cards: validCards } : d));
+            showToast('Kolekcja została pomyślnie zaktualizowana.');
         } else {
             const newDeck = {
                 id: Date.now(),
@@ -91,6 +137,7 @@ export default function App() {
                 cards: validCards
             };
             setDecks([...decks, newDeck]);
+            showToast('Nowa kolekcja została dodana.');
         }
 
         setEditingDeckId(null);
@@ -101,9 +148,15 @@ export default function App() {
 
     const deleteDeck = (id, e) => {
         e.stopPropagation();
-        if (window.confirm('Czy na pewno chcesz usunąć tę kolekcję?')) {
-            setDecks(decks.filter(d => d.id !== id));
-        }
+        setModal({
+            title: 'Potwierdź usunięcie',
+            message: 'Czy na pewno chcesz bezpowrotnie usunąć tę kolekcję fiszek?',
+            type: 'confirm',
+            onConfirm: () => {
+                setDecks(decks.filter(d => d.id !== id));
+                showToast('Kolekcja została usunięta.', 'error');
+            }
+        });
     };
 
     const handleAnswer = (isCorrect) => {
@@ -185,87 +238,65 @@ export default function App() {
     };
 
     return (
-        <div className={`min-h-screen flex flex-col font-sans overflow-x-hidden selection:bg-black selection:text-white transition-colors duration-500 ${isDark ? 'bg-[#0a0a0a] text-gray-100 dark-mode' : 'bg-[#fafafa] text-gray-900'}`}>
+        <div className={`min-h-screen flex flex-col font-sans overflow-x-hidden selection:bg-black selection:text-white transition-colors duration-500 relative ${isDark ? 'bg-[#0a0a0a] text-gray-100 dark-mode' : 'bg-[#fafafa] text-gray-900'}`}>
             <style>{`
-                .scene {
-                    width: 100%;
-                    height: 380px;
-                    perspective: 2000px;
-                }
-                .card-wrapper {
-                    width: 100%;
-                    height: 100%;
-                    transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease-out;
-                }
-                .card-wrapper.leaving {
-                    transform: translateX(-180px) rotate(-6deg) scale(0.92);
-                    opacity: 0;
-                }
-                .card-inner {
-                    position: relative;
-                    width: 100%;
-                    height: 100%;
-                    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-                    transform-style: preserve-3d;
-                    cursor: pointer;
-                }
-                .card-inner.is-flipped {
-                    transform: rotateY(180deg);
-                }
-                .card-inner.no-transition {
-                    transition: none !important;
-                }
-                .card-face {
-                    position: absolute;
-                    width: 100%;
-                    height: 100%;
-                    backface-visibility: hidden;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 3rem;
-                    border-radius: 2rem;
-                    background: var(--card-bg, white);
-                    border: 1px solid var(--card-border, rgba(0,0,0,0.03));
-                    box-shadow: 0 20px 40px -12px var(--card-shadow, rgba(0, 0, 0, 0.06));
-                    font-size: 2.75rem;
-                    font-weight: 800;
-                    letter-spacing: -0.02em;
-                    text-align: center;
-                    transition: background-color 0.5s, border-color 0.5s, box-shadow 0.5s;
-                }
-                .card-back {
-                    transform: rotateY(180deg);
-                    background-color: var(--card-back-bg, #ffffff);
-                    border: 1px solid var(--card-border, rgba(0,0,0,0.06));
-                }
-                .dark-mode {
-                    --card-bg: #111111;
-                    --card-border: rgba(255,255,255,0.05);
-                    --card-shadow: rgba(0, 0, 0, 0.5);
-                    --card-back-bg: #181818;
-                }
-                .fade-in-up {
-                    animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-                    opacity: 0;
-                }
-                @keyframes fadeInUp {
-                    from { opacity: 0; transform: translateY(25px); filter: blur(3px); }
-                    to { opacity: 1; transform: translateY(0); filter: blur(0); }
-                }
+                .scene { width: 100%; height: 380px; perspective: 2000px; }
+                .card-wrapper { width: 100%; height: 100%; transition: transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.5s ease-out; }
+                .card-wrapper.leaving { transform: translateX(-180px) rotate(-6deg) scale(0.92); opacity: 0; }
+                .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); transform-style: preserve-3d; cursor: pointer; }
+                .card-inner.is-flipped { transform: rotateY(180deg); }
+                .card-inner.no-transition { transition: none !important; }
+                .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; padding: 3rem; border-radius: 2rem; background: var(--card-bg, white); border: 1px solid var(--card-border, rgba(0,0,0,0.03)); box-shadow: 0 20px 40px -12px var(--card-shadow, rgba(0, 0, 0, 0.06)); font-size: 2.75rem; font-weight: 800; letter-spacing: -0.02em; text-align: center; transition: background-color 0.5s, border-color 0.5s, box-shadow 0.5s; word-wrap: break-word; overflow-wrap: break-word; hyphens: auto;}
+                .card-back { transform: rotateY(180deg); background-color: var(--card-back-bg, #ffffff); border: 1px solid var(--card-border, rgba(0,0,0,0.06)); }
+                .dark-mode { --card-bg: #111111; --card-border: rgba(255,255,255,0.05); --card-shadow: rgba(0, 0, 0, 0.5); --card-back-bg: #181818; }
+                .fade-in-up { animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+                @keyframes fadeInUp { from { opacity: 0; transform: translateY(25px); filter: blur(3px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
                 .delay-100 { animation-delay: 100ms; }
                 .delay-200 { animation-delay: 200ms; }
+                @keyframes csgoFlashbang { 0%, 15% { background-color: rgba(255, 255, 255, 1); opacity: 1; } 100% { background-color: rgba(255, 255, 255, 1); opacity: 0; } }
+                .flashbang-active { animation: csgoFlashbang 5s cubic-bezier(0.25, 1, 0.5, 1) forwards; pointer-events: none; }
                 
-                @keyframes csgoFlashbang {
-                    0% { background-color: rgba(255, 255, 255, 1); opacity: 1; }
-                    15% { background-color: rgba(255, 255, 255, 1); opacity: 1; }
-                    100% { background-color: rgba(255, 255, 255, 1); opacity: 0; }
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    20%, 60% { transform: translateX(-6px); }
+                    40%, 80% { transform: translateX(6px); }
                 }
-                .flashbang-active {
-                    animation: csgoFlashbang 5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-                    pointer-events: none;
-                }
+                .shake-animation { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
             `}</style>
+
+            {toast && (
+                <div className="fixed bottom-10 right-10 z-[100] fade-in-up">
+                    <div className={`px-6 py-4 rounded-2xl shadow-2xl font-bold uppercase tracking-widest text-sm flex items-center gap-3 ${toast.type === 'error' ? 'bg-red-500 text-white shadow-red-500/20' : isDark ? 'bg-white text-black shadow-white/10' : 'bg-black text-white shadow-black/20'}`}>
+                        <span className="text-lg">{toast.type === 'error' ? '🗑️' : '✅'}</span> {toast.message}
+                    </div>
+                </div>
+            )}
+
+            {modal && (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setModal(null)}></div>
+                    <div className={`relative w-full max-w-md p-8 md:p-10 rounded-[2rem] shadow-2xl z-10 fade-in-up ${isDark ? 'bg-[#111] border border-gray-800' : 'bg-white'}`}>
+                        <h3 className={`text-2xl font-black mb-4 uppercase tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>{modal.title}</h3>
+                        <p className={`text-lg mb-8 font-light leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{modal.message}</p>
+                        <div className="flex justify-end gap-4">
+                            {modal.type === 'confirm' && (
+                                <button
+                                    onClick={() => setModal(null)}
+                                    className={`px-6 py-3 rounded-xl font-bold text-sm uppercase tracking-widest transition-all duration-300 ${isDark ? 'bg-[#222] text-gray-400 hover:text-white hover:bg-[#333]' : 'bg-gray-100 text-gray-600 hover:text-black hover:bg-gray-200'}`}
+                                >
+                                    Anuluj
+                                </button>
+                            )}
+                            <button
+                                onClick={() => { modal.onConfirm?.(); setModal(null); }}
+                                className={`px-6 py-3 rounded-xl font-bold text-sm uppercase tracking-widest shadow-xl transition-all duration-300 hover:-translate-y-1 active:scale-[0.98] ${modal.type === 'confirm' ? 'bg-red-500 text-white hover:bg-red-600 hover:shadow-red-500/20' : isDark ? 'bg-white text-black hover:shadow-white/10' : 'bg-black text-white hover:shadow-black/10'}`}
+                            >
+                                {modal.type === 'confirm' ? 'Usuń' : 'Rozumiem'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {flashbang && (
                 <div className="fixed inset-0 z-[999999] bg-white flashbang-active"></div>
@@ -313,43 +344,60 @@ export default function App() {
                 {view === 'home' && (
                     <div className="fade-in-up">
                         <h2 className={`text-4xl md:text-5xl font-black mb-12 tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>Kolekcje</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {decks.map((d, index) => (
-                                <div
-                                    key={d.id}
-                                    onClick={() => { setCurrentDeckId(d.id); setView('mode-select'); }}
-                                    className={`relative fade-in-up group p-8 md:p-10 rounded-[2rem] cursor-pointer transition-all duration-500 shadow-sm text-left flex flex-col justify-between min-h-[200px] border ${isDark ? 'border-gray-800 bg-[#111] hover:shadow-white/5 hover:border-gray-600' : 'border-gray-100 bg-white hover:shadow-2xl hover:border-gray-300'}`}
-                                    style={{ animationDelay: `${index * 100}ms` }}
-                                >
-                                    <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10">
-                                        <button
-                                            onClick={(e) => startEditing(d, e)}
-                                            className={`p-2.5 rounded-full transition-all duration-300 ${isDark ? 'text-gray-600 hover:text-blue-400 hover:bg-blue-900/30' : 'text-gray-300 hover:text-blue-500 hover:bg-blue-50'}`}
-                                            title="Edytuj kolekcję"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-                                            </svg>
-                                        </button>
-                                        <button
-                                            onClick={(e) => deleteDeck(d.id, e)}
-                                            className={`p-2.5 rounded-full transition-all duration-300 ${isDark ? 'text-gray-600 hover:text-red-400 hover:bg-red-900/30' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'}`}
-                                            title="Usuń kolekcję"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                                            </svg>
-                                        </button>
-                                    </div>
-
-                                    <h3 className={`text-2xl md:text-3xl font-bold mb-4 transition-colors pr-16 ${isDark ? 'text-gray-100 group-hover:text-white' : 'text-gray-900 group-hover:text-black'}`}>{d.name}</h3>
-                                    <div className="flex items-center gap-4">
-                                        <div className={`h-[2px] w-6 group-hover:w-10 transition-all duration-500 ${isDark ? 'bg-gray-800 group-hover:bg-white' : 'bg-gray-200 group-hover:bg-black'}`}></div>
-                                        <p className={`text-xs font-bold uppercase tracking-widest transition-colors ${isDark ? 'text-gray-500 group-hover:text-gray-400' : 'text-gray-400 group-hover:text-gray-600'}`}>{d.cards.length} kart w talii</p>
-                                    </div>
+                        
+                        {decks.length === 0 ? (
+                            <div className={`flex flex-col items-center justify-center text-center p-12 md:p-20 border-2 border-dashed rounded-[2rem] transition-colors duration-500 ${isDark ? 'border-gray-800 bg-[#111]/50' : 'border-gray-200 bg-gray-50/50'}`}>
+                                <div className={`w-24 h-24 mb-8 rounded-full flex items-center justify-center transition-colors duration-500 ${isDark ? 'bg-[#1a1a1a] text-gray-600' : 'bg-white shadow-sm text-gray-400 border border-gray-100'}`}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                                    </svg>
                                 </div>
-                            ))}
-                        </div>
+                                <h3 className={`text-3xl md:text-4xl font-black mb-4 uppercase tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>Brak kolekcji</h3>
+                                <p className={`text-lg mb-10 max-w-lg font-light leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>Nie masz jeszcze żadnych fiszek. Utwórz swoją pierwszą kolekcję, by rozpocząć naukę i poszerzać swoją wiedzę!</p>
+                                <button
+                                    onClick={openAddDeck}
+                                    className={`px-8 py-4 rounded-[1.5rem] font-bold text-sm uppercase tracking-widest shadow-xl hover:-translate-y-1 active:scale-[0.98] transition-all duration-300 ${isDark ? 'bg-white text-black hover:shadow-white/10' : 'bg-black text-white hover:shadow-black/10'}`}
+                                >
+                                    + Utwórz kolekcję
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {decks.map((d, index) => (
+                                    <div
+                                        key={d.id}
+                                        onClick={() => { setCurrentDeckId(d.id); setView('mode-select'); }}
+                                        className={`relative fade-in-up group p-8 md:p-10 rounded-[2rem] cursor-pointer transition-all duration-500 shadow-sm text-left flex flex-col justify-between min-h-[200px] border ${isDark ? 'border-gray-800 bg-[#111] hover:shadow-white/5 hover:border-gray-600' : 'border-gray-100 bg-white hover:shadow-2xl hover:border-gray-300'}`}
+                                        style={{ animationDelay: `${index * 100}ms` }}
+                                    >
+                                        <div className="absolute top-6 right-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10">
+                                            <button
+                                                onClick={(e) => startEditing(d, e)}
+                                                className={`p-2.5 rounded-full transition-all duration-300 ${isDark ? 'text-gray-600 hover:text-blue-400 hover:bg-blue-900/30' : 'text-gray-300 hover:text-blue-500 hover:bg-blue-50'}`}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                onClick={(e) => deleteDeck(d.id, e)}
+                                                className={`p-2.5 rounded-full transition-all duration-300 ${isDark ? 'text-gray-600 hover:text-red-400 hover:bg-red-900/30' : 'text-gray-300 hover:text-red-500 hover:bg-red-50'}`}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                                </svg>
+                                            </button>
+                                        </div>
+
+                                        <h3 className={`text-xl md:text-2xl font-bold mb-4 transition-colors pr-12 break-normal hyphens-none leading-snug ${isDark ? 'text-gray-100 group-hover:text-white' : 'text-gray-900 group-hover:text-black'}`}>{d.name}</h3>
+                                        <div className="flex items-center gap-4">
+                                            <div className={`h-[2px] w-6 group-hover:w-10 transition-all duration-500 ${isDark ? 'bg-gray-800 group-hover:bg-white' : 'bg-gray-200 group-hover:bg-black'}`}></div>
+                                            <p className={`text-xs font-bold uppercase tracking-widest transition-colors ${isDark ? 'text-gray-500 group-hover:text-gray-400' : 'text-gray-400 group-hover:text-gray-600'}`}>{d.cards.length} kart w talii</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -404,15 +452,18 @@ export default function App() {
                         <PageHeader title={editingDeckId ? "Edytuj Kolekcję" : "Nowa Kolekcja"} setView={setView} isDark={isDark} />
 
                         <div className={`space-y-12 p-10 md:p-16 rounded-[2rem] border shadow-sm transition-colors duration-500 ${isDark ? 'bg-[#111] border-gray-800' : 'bg-white border-gray-100'}`}>
-                            <div className="fade-in-up delay-100">
+                            <div className="relative fade-in-up delay-100">
                                 <label className={`block text-sm font-bold uppercase tracking-widest mb-6 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Nazwa kolekcji</label>
                                 <input
                                     type="text"
                                     value={newDeckName}
-                                    onChange={(e) => setNewDeckName(e.target.value)}
+                                    onChange={handleDeckNameChange}
                                     placeholder="np. Słówka z Hiszpańskiego"
-                                    className={`w-full border-2 rounded-[1.5rem] py-5 px-8 text-2xl font-black outline-none transition-all duration-300 ${isDark ? 'bg-[#1a1a1a] border-transparent focus:border-gray-600 focus:bg-[#222] text-white placeholder-gray-700 focus:shadow-white/5' : 'bg-gray-50 border-transparent focus:border-black focus:bg-white text-gray-900 placeholder-gray-300 focus:shadow-xl'}`}
+                                    className={`w-full border-2 rounded-[1.5rem] py-5 px-8 text-2xl font-black outline-none transition-all duration-300 ${deckNameError ? 'border-red-500 text-red-500 shake-animation' : isDark ? 'bg-[#1a1a1a] border-transparent focus:border-gray-600 focus:bg-[#222] text-white placeholder-gray-700' : 'bg-gray-50 border-transparent focus:border-black bg-white text-gray-900 placeholder-gray-300 focus:shadow-xl'}`}
                                 />
+                                <div className={`mt-2 text-xs font-bold uppercase tracking-widest transition-opacity ${deckNameError ? 'opacity-100 text-red-500' : 'opacity-0'}`}>
+                                    Przekroczono limit {MAX_DECK_NAME} znaków!
+                                </div>
                             </div>
 
                             <div className="fade-in-up delay-200">
@@ -420,35 +471,37 @@ export default function App() {
                                     <h3 className={`text-sm font-bold uppercase tracking-widest ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Fiszki ({newCards.length})</h3>
                                 </div>
 
-                                <div className="space-y-4">
+                                <div className="space-y-8">
                                     {newCards.map((card, idx) => (
                                         <div key={idx} className={`flex flex-col md:flex-row gap-4 items-center border p-6 rounded-[1.5rem] transition-colors duration-300 ${isDark ? 'bg-[#1a1a1a]/50 border-gray-800 hover:border-gray-700' : 'bg-gray-50/50 border-gray-100 hover:border-gray-300'}`}>
                                             <div className={`flex font-black text-xl w-8 justify-center ${isDark ? 'text-gray-700' : 'text-gray-300'}`}>
                                                 {idx + 1}
                                             </div>
                                             <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-                                                <input
-                                                    type="text"
-                                                    value={card.front}
-                                                    onChange={(e) => {
-                                                        const updated = [...newCards];
-                                                        updated[idx].front = e.target.value;
-                                                        setNewCards(updated);
-                                                    }}
-                                                    placeholder="Przód (np. słówko)"
-                                                    className={`w-full bg-transparent border-b-2 pb-2 text-lg font-bold outline-none transition-colors ${isDark ? 'border-gray-800 focus:border-gray-500 text-white placeholder-gray-700' : 'border-gray-200 focus:border-black text-gray-900 placeholder-gray-300'}`}
-                                                />
-                                                <input
-                                                    type="text"
-                                                    value={card.back}
-                                                    onChange={(e) => {
-                                                        const updated = [...newCards];
-                                                        updated[idx].back = e.target.value;
-                                                        setNewCards(updated);
-                                                    }}
-                                                    placeholder="Tył (np. tłumaczenie)"
-                                                    className={`w-full bg-transparent border-b-2 pb-2 text-lg font-bold outline-none transition-colors ${isDark ? 'border-gray-800 focus:border-gray-500 text-white placeholder-gray-700' : 'border-gray-200 focus:border-black text-gray-900 placeholder-gray-300'}`}
-                                                />
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        value={card.front}
+                                                        onChange={(e) => handleCardChange(idx, 'front', e.target.value)}
+                                                        placeholder="Przód (np. słówko)"
+                                                        className={`w-full bg-transparent border-b-2 pb-2 text-lg font-bold outline-none transition-colors ${cardErrors[idx]?.front ? 'border-red-500 text-red-500 shake-animation' : isDark ? 'border-gray-800 focus:border-gray-500 text-white placeholder-gray-700' : 'border-gray-200 focus:border-black text-gray-900 placeholder-gray-300'}`}
+                                                    />
+                                                    <div className={`absolute -bottom-5 left-0 text-[10px] font-bold uppercase tracking-widest transition-opacity ${cardErrors[idx]?.front ? 'opacity-100 text-red-500' : 'opacity-0'}`}>
+                                                        Limit znaków: {MAX_CARD_TEXT}
+                                                    </div>
+                                                </div>
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        value={card.back}
+                                                        onChange={(e) => handleCardChange(idx, 'back', e.target.value)}
+                                                        placeholder="Tył (np. tłumaczenie)"
+                                                        className={`w-full bg-transparent border-b-2 pb-2 text-lg font-bold outline-none transition-colors ${cardErrors[idx]?.back ? 'border-red-500 text-red-500 shake-animation' : isDark ? 'border-gray-800 focus:border-gray-500 text-white placeholder-gray-700' : 'border-gray-200 focus:border-black text-gray-900 placeholder-gray-300'}`}
+                                                    />
+                                                    <div className={`absolute -bottom-5 left-0 text-[10px] font-bold uppercase tracking-widest transition-opacity ${cardErrors[idx]?.back ? 'opacity-100 text-red-500' : 'opacity-0'}`}>
+                                                        Limit znaków: {MAX_CARD_TEXT}
+                                                    </div>
+                                                </div>
                                             </div>
                                             <button
                                                 onClick={() => {
@@ -467,7 +520,7 @@ export default function App() {
 
                                 <button
                                     onClick={() => setNewCards([...newCards, { front: '', back: '' }])}
-                                    className={`w-full mt-6 py-6 border-2 border-dashed rounded-[1.5rem] text-sm font-bold uppercase tracking-widest transition-all duration-300 ${isDark ? 'border-gray-800 text-gray-600 hover:border-gray-500 hover:text-white' : 'border-gray-200 text-gray-400 hover:border-gray-900 hover:text-gray-900'}`}
+                                    className={`w-full mt-8 py-6 border-2 border-dashed rounded-[1.5rem] text-sm font-bold uppercase tracking-widest transition-all duration-300 ${isDark ? 'border-gray-800 text-gray-600 hover:border-gray-500 hover:text-white' : 'border-gray-200 text-gray-400 hover:border-gray-900 hover:text-gray-900'}`}
                                 >
                                     + Dodaj kolejną fiszkę
                                 </button>
@@ -524,7 +577,7 @@ export default function App() {
                             </div>
                         </div>
 
-                        <h2 className={`text-4xl md:text-5xl font-bold mb-14 uppercase tracking-tight text-center ${isDark ? 'text-white' : 'text-gray-900'}`}>{deck.name}</h2>
+                        <h2 className={`text-3xl md:text-4xl font-bold mb-14 uppercase tracking-tight text-center break-normal hyphens-none leading-snug px-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>{deck.name}</h2>
 
                         <div className="space-y-12">
                             <div className={`flex justify-between items-end border-b pb-6 ${isDark ? 'border-gray-800' : 'border-gray-200'}`}>
