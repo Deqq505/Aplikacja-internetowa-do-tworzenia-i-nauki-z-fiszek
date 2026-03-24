@@ -13,8 +13,14 @@ const PageHeader = ({ title, setView, isDark }) => (
 );
 
 export default function App() {
-    const [theme, setTheme] = useState('system');
-    const [systemIsDark, setSystemIsDark] = useState(false);
+    const [theme, setTheme] = useState(() => localStorage.getItem('flashcards-theme') || 'system');
+    const [systemIsDark, setSystemIsDark] = useState(() => {
+        if (typeof window !== 'undefined' && window.matchMedia) {
+            return window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
+        return false;
+    });
+
     const [logoClicks, setLogoClicks] = useState(0);
     const [view, setView] = useState('home');
     const [mode, setMode] = useState(null);
@@ -51,18 +57,24 @@ export default function App() {
     const deck = decks.find(d => d.id === currentDeckId);
 
     useEffect(() => {
-        const savedTheme = localStorage.getItem('flashcards-theme');
-        if (savedTheme) {
-            setTheme(savedTheme);
-        } else {
-            setTheme('system');
-        }
+        if (typeof window !== 'undefined' && window.matchMedia) {
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            const listener = (e) => setSystemIsDark(e.matches);
 
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        setSystemIsDark(mediaQuery.matches);
-        const listener = (e) => setSystemIsDark(e.matches);
-        mediaQuery.addEventListener('change', listener);
-        return () => mediaQuery.removeEventListener('change', listener);
+            if (mediaQuery.addEventListener) {
+                mediaQuery.addEventListener('change', listener);
+            } else if (mediaQuery.addListener) {
+                mediaQuery.addListener(listener);
+            }
+
+            return () => {
+                if (mediaQuery.removeEventListener) {
+                    mediaQuery.removeEventListener('change', listener);
+                } else if (mediaQuery.removeListener) {
+                    mediaQuery.removeListener(listener);
+                }
+            };
+        }
     }, []);
 
     useEffect(() => {
@@ -439,22 +451,22 @@ export default function App() {
                                     <p className={`text-lg leading-relaxed font-light ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
                                         Wybierz preferowany motyw wizualny interfejsu.
                                     </p>
-                                    <div className={`flex p-1.5 rounded-2xl border transition-colors duration-500 ${isDark ? 'bg-[#1a1a1a] border-gray-800' : 'bg-gray-50 border-gray-100'}`}>
+                                    <div className={`flex w-full sm:w-auto p-1.5 rounded-2xl border transition-colors duration-500 ${isDark ? 'bg-[#1a1a1a] border-gray-800' : 'bg-gray-50 border-gray-100'}`}>
                                         <button
                                             onClick={() => setTheme('light')}
-                                            className={`px-8 py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-300 ${theme === 'light' ? (isDark ? 'bg-[#333] text-white shadow-md border border-gray-700' : 'bg-white text-black shadow-md border border-gray-200') : (isDark ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-black')}`}
+                                            className={`flex-1 sm:flex-none px-2 md:px-8 py-3.5 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all duration-300 ${theme === 'light' ? (isDark ? 'bg-[#333] text-white shadow-md border border-gray-700' : 'bg-white text-black shadow-md border border-gray-200') : (isDark ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-black')}`}
                                         >
                                             Jasny
                                         </button>
                                         <button
                                             onClick={() => setTheme('system')}
-                                            className={`px-8 py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-300 ${theme === 'system' ? (isDark ? 'bg-[#333] text-white shadow-md border border-gray-700' : 'bg-white text-black shadow-md border border-gray-200') : (isDark ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-black')}`}
+                                            className={`flex-1 sm:flex-none px-2 md:px-8 py-3.5 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all duration-300 ${theme === 'system' ? (isDark ? 'bg-[#333] text-white shadow-md border border-gray-700' : 'bg-white text-black shadow-md border border-gray-200') : (isDark ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-black')}`}
                                         >
                                             System
                                         </button>
                                         <button
                                             onClick={() => setTheme('dark')}
-                                            className={`px-8 py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-300 ${theme === 'dark' ? (isDark ? 'bg-[#333] text-white shadow-md border border-gray-700' : 'bg-white text-black shadow-md border border-gray-200') : (isDark ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-black')}`}
+                                            className={`flex-1 sm:flex-none px-2 md:px-8 py-3.5 rounded-xl text-[10px] md:text-xs font-bold uppercase tracking-widest transition-all duration-300 ${theme === 'dark' ? (isDark ? 'bg-[#333] text-white shadow-md border border-gray-700' : 'bg-white text-black shadow-md border border-gray-200') : (isDark ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-black')}`}
                                         >
                                             Ciemny
                                         </button>
