@@ -2,6 +2,13 @@
 
 Prosta aplikacja internetowa do tworzenia i nauki z fiszek. Projekt skupia się na przejrzystym interfejsie i logicznym wspieraniu procesu zapamiętywania.
 
+## 📊 Diagram Przypadków Użycia
+Tutaj znajduje się graficzna wizualizacja funkcjonalności aplikacji dla użytkownika.
+
+
+<img width="2816" height="1536" alt="diagram" src="https://github.com/user-attachments/assets/0d5216d8-3dc2-4323-814b-9d65951ce485" />
+
+
 ## 👥 Autorzy
 * **Grzegorz Mrzyk**
 * **Marcin Puzoń**
@@ -49,11 +56,3 @@ W programie Visual Studio Code otwórz wbudowany terminal:
 W terminalu wpisz poniższą komendę i zatwierdź Enterem:
 ```bash
 npm install
-```
-
-### KROK 5: Uruchomienie programu
-Po zainstalowaniu wpisz komendę i zatwierdź Enterem:
-```bash
-npm run dev
-```
-W terminalu pojawi się link (najczęściej http://localhost:5173). Skopiuj ten link i wklej w przeglądarkę.
