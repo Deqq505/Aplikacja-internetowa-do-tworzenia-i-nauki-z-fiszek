@@ -13,7 +13,9 @@ const PageHeader = ({ title, setView, isDark }) => (
 );
 
 export default function App() {
-    const [theme, setTheme] = useState('light');
+    const [theme, setTheme] = useState('system');
+    const [systemIsDark, setSystemIsDark] = useState(false);
+    const [logoClicks, setLogoClicks] = useState(0);
     const [view, setView] = useState('home');
     const [mode, setMode] = useState(null);
     const [decks, setDecks] = useState([
@@ -47,16 +49,27 @@ export default function App() {
     const MAX_CARD_TEXT = 100;
 
     const deck = decks.find(d => d.id === currentDeckId);
-    const isDark = theme === 'dark';
 
     useEffect(() => {
         const savedTheme = localStorage.getItem('flashcards-theme');
-        if (savedTheme) setTheme(savedTheme);
+        if (savedTheme) {
+            setTheme(savedTheme);
+        } else {
+            setTheme('system');
+        }
+
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        setSystemIsDark(mediaQuery.matches);
+        const listener = (e) => setSystemIsDark(e.matches);
+        mediaQuery.addEventListener('change', listener);
+        return () => mediaQuery.removeEventListener('change', listener);
     }, []);
 
     useEffect(() => {
         localStorage.setItem('flashcards-theme', theme);
     }, [theme]);
+
+    const isDark = theme === 'dark' || (theme === 'system' && systemIsDark);
 
     useEffect(() => {
         if (sessionCards.length > 0 && !animating) {
@@ -311,8 +324,17 @@ export default function App() {
                 <div className="max-w-6xl mx-auto px-6 md:px-8 py-5 md:py-6 flex justify-between items-center">
                     <div className="flex gap-10 md:gap-12 items-center">
                         <h1
-                            className={`text-2xl md:text-3xl font-black tracking-tight cursor-pointer uppercase hover:opacity-70 transition-opacity duration-300 ${isDark ? 'text-white' : 'text-gray-900'}`}
-                            onClick={() => setView('home')}
+                            className={`text-2xl md:text-3xl font-black tracking-tight cursor-pointer select-none uppercase hover:opacity-70 transition-opacity duration-300 ${isDark ? 'text-white' : 'text-gray-900'}`}
+                            onClick={() => {
+                                setView('home');
+                                setLogoClicks(prev => {
+                                    if (prev + 1 >= 5) {
+                                        triggerFlashbang();
+                                        return 0;
+                                    }
+                                    return prev + 1;
+                                });
+                            }}
                         >
                             Flashcards
                         </h1>
@@ -349,7 +371,7 @@ export default function App() {
                 {view === 'home' && (
                     <div className="fade-in-up">
                         <h2 className={`text-4xl md:text-5xl font-black mb-12 tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>Kolekcje</h2>
-                        
+
                         {decks.length === 0 ? (
                             <div className={`flex flex-col items-center justify-center text-center p-12 md:p-20 border-2 border-dashed rounded-[2rem] transition-colors duration-500 ${isDark ? 'border-gray-800 bg-[#111]/50' : 'border-gray-200 bg-gray-50/50'}`}>
                                 <div className={`w-24 h-24 mb-8 rounded-full flex items-center justify-center transition-colors duration-500 ${isDark ? 'bg-[#1a1a1a] text-gray-600' : 'bg-white shadow-sm text-gray-400 border border-gray-100'}`}>
@@ -420,34 +442,25 @@ export default function App() {
                                     <div className={`flex p-1.5 rounded-2xl border transition-colors duration-500 ${isDark ? 'bg-[#1a1a1a] border-gray-800' : 'bg-gray-50 border-gray-100'}`}>
                                         <button
                                             onClick={() => setTheme('light')}
-                                            className={`px-8 py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-300 ${!isDark ? 'bg-white text-black shadow-md border border-gray-200' : 'text-gray-500 hover:text-white'}`}
+                                            className={`px-8 py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-300 ${theme === 'light' ? (isDark ? 'bg-[#333] text-white shadow-md border border-gray-700' : 'bg-white text-black shadow-md border border-gray-200') : (isDark ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-black')}`}
                                         >
                                             Jasny
                                         </button>
                                         <button
+                                            onClick={() => setTheme('system')}
+                                            className={`px-8 py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-300 ${theme === 'system' ? (isDark ? 'bg-[#333] text-white shadow-md border border-gray-700' : 'bg-white text-black shadow-md border border-gray-200') : (isDark ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-black')}`}
+                                        >
+                                            System
+                                        </button>
+                                        <button
                                             onClick={() => setTheme('dark')}
-                                            className={`px-8 py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-300 ${isDark ? 'bg-[#333] text-white shadow-md border border-gray-700' : 'text-gray-400 hover:text-black'}`}
+                                            className={`px-8 py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-300 ${theme === 'dark' ? (isDark ? 'bg-[#333] text-white shadow-md border border-gray-700' : 'bg-white text-black shadow-md border border-gray-200') : (isDark ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-black')}`}
                                         >
                                             Ciemny
                                         </button>
                                     </div>
                                 </div>
                             </section>
-
-                            <div className={`pt-10 mt-10 border-t flex flex-col md:flex-row items-start md:items-center justify-between gap-6 fade-in-up delay-200 ${isDark ? 'border-gray-800' : 'border-gray-100'}`}>
-                                <div>
-                                    <h4 className={`text-sm font-bold uppercase tracking-widest mb-3 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>Funkcja specjalna</h4>
-                                    <p className={`text-lg leading-relaxed font-light ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                                        Oślepiający efekt Flashbang rodem z CS:GO.
-                                    </p>
-                                </div>
-                                <button
-                                    onClick={triggerFlashbang}
-                                    className={`px-8 py-3.5 rounded-xl text-xs font-bold uppercase tracking-widest transition-all duration-300 hover:scale-105 active:scale-[0.95] ${isDark ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.6)]' : 'bg-black text-white hover:bg-gray-800'}`}
-                                >
-                                    Flashbang
-                                </button>
-                            </div>
                         </div>
                     </div>
                 )}
@@ -786,7 +799,7 @@ export default function App() {
                                 <div className={`w-full lg:w-[45%] min-h-[250px] lg:min-h-full rounded-2xl overflow-hidden shadow-inner border hover:scale-[1.03] transition-transform duration-500 cursor-pointer transform-gpu relative z-10 ${isDark ? 'border-gray-700' : 'border-gray-800'}`}>
                                     <iframe
                                         title="mapa-dojazdu"
-                                        src="https://maps.google.com/maps?q=Spawner%20Marka,%20Strzelc%C3%B3w%204A,%20Krak%C3%B3w&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                                        src="https://maps.google.com/maps?q=Strzelc%C3%B3w%204A,%20Krak%C3%B3w&t=&z=15&ie=UTF8&iwloc=&output=embed"
                                         width="100%"
                                         height="100%"
                                         style={{ border: 0, filter: isDark ? 'grayscale(1) invert(0.9) contrast(1.2)' : 'none' }}
