@@ -25,8 +25,9 @@ export default function App() {
     const [view, setView] = useState('home');
     const [mode, setMode] = useState(null);
     const [decks, setDecks] = useState([
-        { id: 1, name: 'Język Angielski', cards: [{front: 'Apple', back: 'Jabłko'}, {front: 'Dog', back: 'Pies'}] },
-        { id: 2, name: 'Programowanie', cards: [{front: 'Variable', back: 'Zmienna'}] }
+        { id: 1, name: 'Język Angielski', cards: [{front: 'Apple', back: 'Jabłko'}, {front: 'Dog', back: 'Pies'}, {front: 'Horse', back: 'Koń'}, {front: 'Elephant', back: 'Słoń'}, {front: 'Lion', back: 'Lew'}, {front: 'Tiger', back: 'Tygrys'}, {front: 'Bear', back: 'Niedźwiedź'}, {front: 'Monkey', back: 'Małpka'}, {front: 'Bird', back: 'Ptak'}, {front: 'Fish', back: 'Ryba'}] },
+        { id: 2, name: 'Programowanie', cards: [{front: 'Variable', back: 'Zmienna'}, {front: 'Function', back: 'Funkcja'}, {front: 'Class', back: 'Klasa'}, {front: 'Array', back: 'Tablica'}, {front: 'String', back: 'Łańcuch znaków'}, {front: 'Algorithm', back: 'Algorytm'}, {front: 'Bug', back: 'Błąd'}, {front: 'Compiler', back: 'Kompilator'}, {front: 'Debugging', back: 'Debugowanie'}, {front: 'Car', back: 'Samochód'}] },
+        { id: 3, name: 'Historia', cards: [{front: 'World War I', back: 'Pierwsza Wojna Światowa'}, {front: 'World War II', back: 'Druga Wojna Światowa'}, {front: 'Cold War', back: 'Zimna Wojna'}, {front: 'French Revolution', back: 'Rewolucja Francuska'}, {front: 'American Independence', back: 'Niezależność Stanów Zjednoczonych'}] }
     ]);
 
     const [editingDeckId, setEditingDeckId] = useState(null);
